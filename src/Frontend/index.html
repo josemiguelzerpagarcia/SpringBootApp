@@ -1,1501 +1,393 @@
 <!doctype html>
 <html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Biblioteca · API Console</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <style>
-    /* ─── TOKENS ─────────────────────────────────────────────── */
-    :root {
-      --ink:      #0f0e0d;
-      --paper:    #f5f2ee;
-      --cream:    #ede8e1;
-      --accent:   #c8401e;
-      --accent2:  #2d6a4f;
-      --muted:    #7a7268;
-      --border:   #d6d0c8;
-      --card:     #fffdfb;
-      --mono:     'DM Mono', monospace;
-      --serif:    'DM Serif Display', serif;
-      --sans:     'DM Sans', sans-serif;
-      --radius:   4px;
-      --shadow:   0 2px 12px rgba(15,14,13,.08);
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestión de Videojuegos</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background-color: #f4f7f6;
+        color: #333;
+      }
+      .navbar {
+        margin-bottom: 2rem;
+      }
+      .sidebar {
+        background: #fff;
+        border-radius: 8px;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+      .nav-link {
+        color: #555;
+        border-radius: 4px;
+      }
+      .nav-link.active {
+        background-color: #0d6efd !important;
+        color: #fff !important;
+      }
+      .card {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+      }
+      .stat-card {
+        text-align: center;
+        padding: 1.5rem;
+      }
+      .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #0d6efd;
+      }
+      .view-section {
+        display: none;
+      }
+      .view-section.active {
+        display: block;
+      }
+      .console-box {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 0.8rem;
+        padding: 1rem;
+        height: 200px;
+        overflow-y: auto;
+      }
+      .login-container {
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .login-card {
+        width: 100%;
+        max-width: 400px;
+        padding: 2rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="viewLogin" class="login-container">
+      <div class="card login-card">
+        <div class="text-center mb-4">
+          <h2 class="fw-bold">Acceso Sistema</h2>
+          <p class="text-muted small">Gestión de Biblioteca de Videojuegos</p>
+        </div>
 
-    /* ─── RESET ──────────────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { font-size: 15px; }
-    body {
-      font-family: var(--sans);
-      background: var(--paper);
-      color: var(--ink);
-      min-height: 100vh;
-      display: grid;
-      grid-template-columns: 260px 1fr;
-      grid-template-rows: auto 1fr;
-    }
+        <div class="mb-3">
+          <label class="form-label small">API URL</label>
+          <input
+            type="text"
+            id="apiBase"
+            class="form-control"
+            value="http://localhost:9091"
+          />
+        </div>
 
-    /* ─── TOP BAR ────────────────────────────────────────────── */
-    .topbar {
-      grid-column: 1 / -1;
-      background: var(--ink);
-      color: var(--paper);
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: .7rem 1.5rem;
-      border-bottom: 2px solid var(--accent);
-    }
-    .topbar-title {
-      font-family: var(--serif);
-      font-size: 1.35rem;
-      letter-spacing: .01em;
-      color: #fff;
-    }
-    .topbar-title em { color: var(--accent); font-style: italic; }
-    .topbar-spacer { flex: 1; }
-    .badge-role {
-      font-family: var(--mono);
-      font-size: .7rem;
-      padding: .25rem .6rem;
-      border-radius: 2px;
-      background: transparent;
-      border: 1px solid rgba(255,255,255,.3);
-      color: rgba(255,255,255,.7);
-      letter-spacing: .05em;
-      text-transform: uppercase;
-      transition: all .2s;
-      max-width: 46vw;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .badge-role.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .btn-logout {
-      font-family: var(--mono);
-      font-size: .7rem;
-      padding: .3rem .8rem;
-      border: 1px solid var(--accent);
-      background: transparent;
-      color: var(--accent);
-      cursor: pointer;
-      border-radius: 2px;
-      letter-spacing: .05em;
-      text-transform: uppercase;
-      transition: all .2s;
-    }
-    .btn-logout:hover { background: var(--accent); color: #fff; }
-    .btn-logout:disabled { opacity: .3; cursor: not-allowed; }
+        <div class="mb-3">
+          <label class="form-label small">Email</label>
+          <input type="email" id="loginEmail" class="form-control" />
+        </div>
 
-    /* ─── SIDEBAR ────────────────────────────────────────────── */
-    .sidebar {
-      background: var(--cream);
-      border-right: 1px solid var(--border);
-      padding: 1.5rem 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-      overflow-y: auto;
-    }
-    .sidebar-section-title {
-      font-family: var(--mono);
-      font-size: .65rem;
-      text-transform: uppercase;
-      letter-spacing: .12em;
-      color: var(--muted);
-      padding-bottom: .4rem;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: .5rem;
-    }
-    .sidebar-nav { display: flex; flex-direction: column; gap: .2rem; }
-    .nav-btn {
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-      padding: .55rem .8rem;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      border-radius: var(--radius);
-      font-family: var(--sans);
-      font-size: .85rem;
-      font-weight: 500;
-      color: var(--muted);
-      text-align: left;
-      transition: all .15s;
-    }
-    .nav-btn:hover { background: var(--border); color: var(--ink); }
-    .nav-btn.active { background: var(--ink); color: #fff; }
-    .nav-btn .icon { font-size: 1rem; width: 1.2rem; text-align: center; }
-    .nav-btn .method-badge {
-      margin-left: auto;
-      font-family: var(--mono);
-      font-size: .6rem;
-      padding: .1rem .4rem;
-      border-radius: 2px;
-      font-weight: 500;
-    }
-    .method-GET    { background: #d4edda; color: #155724; }
-    .method-POST   { background: #cce5ff; color: #004085; }
-    .method-PUT    { background: #fff3cd; color: #856404; }
-    .method-DELETE { background: #f8d7da; color: #721c24; }
+        <div class="mb-4">
+          <label class="form-label small">Contraseña</label>
+          <input type="password" id="loginPass" class="form-control" />
+        </div>
 
-    /* ─── MAIN ───────────────────────────────────────────────── */
-    .main {
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-    }
+        <div class="d-flex gap-2 mb-4">
+          <button
+            class="btn btn-outline-secondary w-100 btn-sm"
+            onclick="useDemo('user')"
+          >
+            Demo User
+          </button>
+          <button
+            class="btn btn-outline-secondary w-100 btn-sm"
+            onclick="useDemo('admin')"
+          >
+            Demo Admin
+          </button>
+        </div>
 
-    /* ─── LOGIN PANEL ────────────────────────────────────────── */
-    #viewLogin {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex: 1;
-      padding: 2rem;
-    }
-    .login-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      box-shadow: var(--shadow);
-      width: 100%;
-      max-width: 480px;
-      overflow: hidden;
-    }
-    .login-header {
-      background: var(--ink);
-      padding: 1.5rem;
-      color: #fff;
-    }
-    .login-header h2 { font-family: var(--serif); font-size: 1.6rem; margin-bottom: .3rem; }
-    .login-header p { font-size: .8rem; color: rgba(255,255,255,.5); }
-    .login-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+        <button id="btnLogin" class="btn btn-primary w-100">Entrar</button>
 
-    .form-group { display: flex; flex-direction: column; gap: .4rem; }
-    .form-label { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
-    .form-control {
-      padding: .55rem .8rem;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      font-family: var(--sans);
-      font-size: .9rem;
-      background: var(--paper);
-      color: var(--ink);
-      outline: none;
-      transition: border-color .15s;
-    }
-    .form-control:focus { border-color: var(--ink); }
-    .form-text { font-size: .75rem; color: var(--muted); margin-top: .2rem; }
-
-    .preset-row { display: flex; gap: .5rem; align-items: flex-end; }
-    .preset-row .form-group { flex: 1; }
-
-    .btn-primary {
-      padding: .65rem 1.2rem;
-      background: var(--ink);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius);
-      font-family: var(--sans);
-      font-weight: 600;
-      font-size: .9rem;
-      cursor: pointer;
-      transition: background .15s;
-      width: 100%;
-    }
-    .btn-primary:hover { background: #1a1a18; }
-    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
-
-    .btn-secondary {
-      padding: .55rem 1rem;
-      background: transparent;
-      color: var(--ink);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      font-family: var(--sans);
-      font-weight: 500;
-      font-size: .85rem;
-      cursor: pointer;
-      transition: all .15s;
-      white-space: nowrap;
-    }
-    .btn-secondary:hover { border-color: var(--ink); }
-
-    .btn-sm { padding: .35rem .75rem; font-size: .78rem; }
-
-    /* ─── ALERT ──────────────────────────────────────────────── */
-    .alert {
-      padding: .7rem 1rem;
-      border-radius: var(--radius);
-      font-size: .85rem;
-      display: none;
-    }
-    .alert.show { display: block; }
-    .alert-danger  { background: #fdecea; border: 1px solid #f5c6c6; color: #7f1d1d; }
-    .alert-success { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
-    .alert-warning { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
-
-    /* ─── CONTENT AREA ───────────────────────────────────────── */
-    #viewContent {
-      display: none;
-      flex: 1;
-      padding: 1.5rem;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-    #viewContent.show { display: flex; }
-
-    .content-header {
-      display: flex;
-      align-items: baseline;
-      gap: 1rem;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 1rem;
-    }
-    .content-header h1 { font-family: var(--serif); font-size: 1.8rem; }
-    .content-header .endpoint-tag {
-      font-family: var(--mono);
-      font-size: .72rem;
-      color: var(--muted);
-    }
-    .content-header .spacer { flex: 1; }
-
-    /* ─── TABLE ──────────────────────────────────────────────── */
-    .table-wrap {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      overflow: hidden;
-      box-shadow: var(--shadow);
-    }
-    .table-toolbar {
-      display: flex;
-      align-items: center;
-      gap: .75rem;
-      padding: .75rem 1rem;
-      border-bottom: 1px solid var(--border);
-      background: var(--cream);
-    }
-    .table-toolbar .toolbar-title { font-weight: 600; font-size: .9rem; }
-    .table-toolbar .toolbar-meta  { font-family: var(--mono); font-size: .72rem; color: var(--muted); }
-    .table-toolbar .spacer { flex: 1; }
-
-    table { width: 100%; border-collapse: collapse; }
-    thead th {
-      font-family: var(--mono);
-      font-size: .7rem;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      color: var(--muted);
-      padding: .6rem 1rem;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-      background: var(--cream);
-    }
-    tbody tr { transition: background .1s; }
-    tbody tr:hover { background: var(--paper); }
-    tbody td {
-      padding: .65rem 1rem;
-      font-size: .88rem;
-      border-bottom: 1px solid var(--border);
-      vertical-align: middle;
-    }
-    tbody tr:last-child td { border-bottom: none; }
-    .mono-cell { font-family: var(--mono); font-size: .8rem; color: var(--muted); }
-
-    .action-cell { display: flex; gap: .4rem; flex-wrap: wrap; }
-    .btn-edit, .btn-del, .btn-view {
-      padding: .25rem .6rem;
-      background: transparent;
-      border: 1px solid var(--border);
-      border-radius: 2px;
-      font-family: var(--mono);
-      font-size: .68rem;
-      cursor: pointer;
-      color: var(--muted);
-      transition: all .15s;
-    }
-    .btn-edit:hover { border-color: #856404; color: #856404; background: #fff3cd; }
-    .btn-del:hover  { border-color: var(--accent); color: var(--accent); background: #fdecea; }
-    .btn-view:hover { border-color: var(--ink); color: var(--ink); background: var(--paper); }
-
-    .pagination {
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-      padding: .75rem 1rem;
-      border-top: 1px solid var(--border);
-    }
-    .pagination .page-info { font-family: var(--mono); font-size: .75rem; color: var(--muted); flex: 1; text-align: center; }
-    .btn-page {
-      padding: .35rem .8rem;
-      border: 1px solid var(--border);
-      background: transparent;
-      border-radius: var(--radius);
-      font-family: var(--mono);
-      font-size: .75rem;
-      cursor: pointer;
-      transition: all .15s;
-    }
-    .btn-page:hover:not(:disabled) { border-color: var(--ink); }
-    .btn-page:disabled { opacity: .3; cursor: not-allowed; }
-
-    /* ─── FORM PANEL ─────────────────────────────────────────── */
-    .form-panel {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      overflow: hidden;
-      box-shadow: var(--shadow);
-    }
-    .form-panel-header {
-      background: var(--cream);
-      border-bottom: 1px solid var(--border);
-      padding: .75rem 1rem;
-      display: flex;
-      align-items: center;
-      gap: .75rem;
-    }
-    .form-panel-header .panel-title { font-weight: 600; font-size: .9rem; }
-    .form-panel-body { padding: 1rem; display: flex; flex-direction: column; gap: .75rem; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .75rem; }
-
-    /* ─── DASHBOARD GRID ─────────────────────────────────────── */
-    .dash-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-    }
-    .kpi {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      box-shadow: var(--shadow);
-      padding: 1rem;
-    }
-    .kpi .kpi-title { font-family: var(--mono); font-size: .72rem; text-transform: uppercase; color: var(--muted); letter-spacing: .08em; }
-    .kpi .kpi-value { font-family: var(--serif); font-size: 1.6rem; margin-top: .25rem; }
-    .kpi .kpi-sub { margin-top: .25rem; color: var(--muted); font-size: .85rem; }
-
-    /* ─── RESPONSE CONSOLE ───────────────────────────────────── */
-    .console-panel {
-      background: var(--ink);
-      border-radius: 6px;
-      overflow: hidden;
-      box-shadow: var(--shadow);
-    }
-    .console-toolbar {
-      display: flex;
-      align-items: center;
-      gap: .75rem;
-      padding: .6rem 1rem;
-      border-bottom: 1px solid rgba(255,255,255,.08);
-    }
-    .console-toolbar .console-title {
-      font-family: var(--mono);
-      font-size: .72rem;
-      text-transform: uppercase;
-      letter-spacing: .1em;
-      color: rgba(255,255,255,.4);
-    }
-    .console-toolbar .spacer { flex: 1; }
-    .status-pill {
-      font-family: var(--mono);
-      font-size: .72rem;
-      padding: .2rem .6rem;
-      border-radius: 2px;
-      font-weight: 500;
-    }
-    .status-2xx { background: #065f46; color: #a7f3d0; }
-    .status-4xx { background: #7f1d1d; color: #fecaca; }
-    .status-5xx { background: #78350f; color: #fde68a; }
-    .btn-copy-console {
-      font-family: var(--mono);
-      font-size: .68rem;
-      padding: .2rem .6rem;
-      background: transparent;
-      border: 1px solid rgba(255,255,255,.15);
-      color: rgba(255,255,255,.5);
-      border-radius: 2px;
-      cursor: pointer;
-      transition: all .15s;
-    }
-    .btn-copy-console:hover { border-color: rgba(255,255,255,.4); color: rgba(255,255,255,.8); }
-    pre.console-out {
-      font-family: var(--mono);
-      font-size: .78rem;
-      color: #a3e3c2;
-      padding: 1rem;
-      min-height: 160px;
-      max-height: 300px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      word-break: break-all;
-      line-height: 1.6;
-    }
-
-    /* ─── MODAL ──────────────────────────────────────────────── */
-    .modal-backdrop {
-      display: none;
-      position: fixed; inset: 0;
-      background: rgba(15,14,13,.5);
-      z-index: 100;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-    }
-    .modal-backdrop.show { display: flex; }
-    .modal {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      width: 100%;
-      max-width: 480px;
-      box-shadow: 0 8px 40px rgba(0,0,0,.3);
-      overflow: hidden;
-    }
-    .modal-header {
-      background: var(--cream);
-      border-bottom: 1px solid var(--border);
-      padding: 1rem 1.25rem;
-      display: flex;
-      align-items: center;
-      gap: .75rem;
-    }
-    .modal-header h3 { font-family: var(--serif); font-size: 1.2rem; flex: 1; }
-    .btn-modal-close {
-      background: none; border: none; cursor: pointer;
-      font-size: 1.2rem; color: var(--muted); padding: .2rem;
-    }
-    .modal-body { padding: 1.25rem; display: flex; flex-direction: column; gap: .75rem; }
-    .modal-footer {
-      padding: 1rem 1.25rem;
-      border-top: 1px solid var(--border);
-      display: flex;
-      gap: .5rem;
-      justify-content: flex-end;
-    }
-    .btn-confirm {
-      padding: .55rem 1.2rem;
-      background: var(--accent2);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius);
-      font-family: var(--sans);
-      font-weight: 600;
-      font-size: .88rem;
-      cursor: pointer;
-    }
-    .btn-confirm:hover { opacity: .9; }
-    .btn-confirm.danger { background: var(--accent); }
-
-    /* ─── JWT COLLAPSE ───────────────────────────────────────── */
-    .jwt-toggle {
-      font-family: var(--mono);
-      font-size: .7rem;
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--muted);
-      text-decoration: underline;
-      text-align: left;
-      padding: 0;
-    }
-    .jwt-box {
-      display: none;
-      background: var(--ink);
-      border-radius: var(--radius);
-      padding: .75rem;
-      margin-top: .5rem;
-    }
-    .jwt-box.show { display: block; }
-    .jwt-box .jwt-raw { font-family: var(--mono); font-size: .7rem; color: #a3e3c2; word-break: break-all; margin-bottom: .5rem; }
-    .jwt-box pre { font-family: var(--mono); font-size: .72rem; color: #fde68a; }
-
-    /* ─── SPINNER ────────────────────────────────────────────── */
-    .spinner {
-      display: inline-block;
-      width: 14px; height: 14px;
-      border: 2px solid rgba(255,255,255,.3);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin .6s linear infinite;
-      vertical-align: middle;
-      margin-right: .4rem;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ─── EMPTY STATE ────────────────────────────────────────── */
-    .empty-state { text-align: center; padding: 3rem; color: var(--muted); }
-    .empty-state .icon { font-size: 2.5rem; margin-bottom: .5rem; }
-    .empty-state p { font-size: .88rem; }
-
-    /* ─── USERS TABLE ────────────────────────────────────────── */
-    .role-chip {
-      display: inline-block;
-      font-family: var(--mono);
-      font-size: .65rem;
-      padding: .15rem .45rem;
-      border-radius: 2px;
-      background: var(--cream);
-      border: 1px solid var(--border);
-      margin: .1rem;
-    }
-
-    /* ─── FADE IN ────────────────────────────────────────────── */
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    .fade-in { animation: fadeIn .25s ease forwards; }
-
-    /* ─── RESPONSIVE ─────────────────────────────────────────── */
-    @media (max-width: 768px) {
-      body { grid-template-columns: 1fr; }
-      .sidebar { display: none; }
-      .form-row { grid-template-columns: 1fr; }
-      .dash-grid { grid-template-columns: 1fr; }
-      .badge-role { max-width: 70vw; }
-    }
-  </style>
-</head>
-<body>
-
-<!-- TOP BAR -->
-<header class="topbar">
-  <span class="topbar-title"><em>Biblioteca</em> API Console</span>
-  <div class="topbar-spacer"></div>
-  <span id="badgeRole" class="badge-role" title="Usuario · rol">—</span>
-  <button id="btnLogout" class="btn-logout" disabled>Salir</button>
-</header>
-
-<!-- SIDEBAR -->
-<aside class="sidebar" id="sidebar">
-  <div>
-    <div class="sidebar-section-title">Auth</div>
-    <nav class="sidebar-nav">
-      <button class="nav-btn active" data-view="login" onclick="showLogin()">
-        <span class="icon">🔑</span> Login
-        <span class="method-badge method-POST">POST</span>
-      </button>
-    </nav>
-  </div>
-
-  <div id="navUser" style="display:none">
-    <div class="sidebar-section-title">Libros</div>
-    <nav class="sidebar-nav">
-      <button class="nav-btn" data-view="listLibros" onclick="switchView('listLibros')">
-        <span class="icon">📚</span> Listado
-        <span class="method-badge method-GET">GET</span>
-      </button>
-    </nav>
-  </div>
-
-  <div id="navAdmin" style="display:none">
-    <div class="sidebar-section-title">Admin</div>
-    <nav class="sidebar-nav">
-      <button class="nav-btn" data-view="adminDashboard" onclick="switchView('adminDashboard')">
-        <span class="icon">🧭</span> Dashboard
-        <span class="method-badge method-GET">GET</span>
-      </button>
-    </nav>
-
-    <div class="sidebar-section-title" style="margin-top:1rem">Admin · Libros</div>
-    <nav class="sidebar-nav">
-      <button class="nav-btn" data-view="listLibros" onclick="switchView('listLibros')">
-        <span class="icon">📚</span> Listado + CRUD
-        <span class="method-badge method-GET">GET</span>
-      </button>
-      <button class="nav-btn" data-view="createLibro" onclick="switchView('createLibro')">
-        <span class="icon">➕</span> Crear
-        <span class="method-badge method-POST">POST</span>
-      </button>
-    </nav>
-
-    <div class="sidebar-section-title" style="margin-top:1rem">Admin · Users</div>
-    <nav class="sidebar-nav">
-      <button class="nav-btn" data-view="listUsers" onclick="switchView('listUsers')">
-        <span class="icon">👥</span> Usuarios
-        <span class="method-badge method-GET">GET</span>
-      </button>
-    </nav>
-
-    <div class="sidebar-section-title" style="margin-top:1rem">Resources</div>
-    <nav class="sidebar-nav">
-      <button class="nav-btn" data-view="resource" onclick="switchView('resource')">
-        <span class="icon">🔒</span> Protected
-        <span class="method-badge method-GET">GET</span>
-      </button>
-    </nav>
-  </div>
-</aside>
-
-<!-- MAIN -->
-<main class="main">
-
-  <!-- LOGIN -->
-  <div id="viewLogin">
-    <div class="login-card fade-in">
-      <div class="login-header">
-        <h2>Acceder</h2>
-        <p>Introduce tus credenciales para obtener un JWT</p>
+        <div
+          id="loginError"
+          class="alert alert-danger mt-3 small"
+          style="display: none"
+        ></div>
       </div>
-      <div class="login-body">
+    </div>
 
-        <div class="form-group">
-          <label class="form-label">API Base URL</label>
-          <input id="apiBase" class="form-control" value="http://localhost:9091">
-          <span class="form-text">Cambia si el backend corre en otra IP/puerto</span>
-        </div>
-
-        <div class="preset-row">
-          <div class="form-group">
-            <label class="form-label">Perfil rápido</label>
-            <select id="preset" class="form-control">
-              <option value="user">Alice · ROLE_USER</option>
-              <option value="admin">Bob · ROLE_ADMIN</option>
-              <option value="custom">Manual</option>
-            </select>
+    <div id="appContainer" style="display: none">
+      <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+          <a class="navbar-brand fw-bold" href="#">GESTIÓN API</a>
+          <div class="ms-auto d-flex align-items-center">
+            <div class="text-end me-3 text-white">
+              <span id="displayEmail" class="small d-block"></span>
+              <span id="displayRole" class="small opacity-75"></span>
+            </div>
+            <button class="btn btn-sm btn-outline-light" onclick="logout()">
+              Salir
+            </button>
           </div>
-          <button class="btn-secondary" onclick="fillPreset()">Rellenar</button>
         </div>
+      </nav>
 
-        <div class="form-group">
-          <label class="form-label">Email</label>
-          <input id="email" class="form-control" type="email" autocomplete="username">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-3 mb-4">
+            <div class="sidebar">
+              <div class="nav flex-column nav-pills">
+                <a
+                  href="#"
+                  class="nav-link active"
+                  data-target="dashboard"
+                  onclick="switchTo('dashboard')"
+                >
+                  General
+                </a>
+                <a
+                  href="#"
+                  class="nav-link"
+                  data-target="games"
+                  onclick="switchTo('games')"
+                >
+                  Videojuegos
+                </a>
+                <a
+                  href="#"
+                  class="nav-link"
+                  id="navUsers"
+                  data-target="users"
+                  onclick="switchTo('users')"
+                  style="display: none"
+                >
+                  Usuarios
+                </a>
+                <a
+                  href="#"
+                  class="nav-link"
+                  data-target="logs"
+                  onclick="switchTo('logs')"
+                >
+                  Logs
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <main class="col-md-9">
+            <section id="viewDashboard" class="view-section active">
+              <h1 class="h4 mb-4">Resumen del Sistema</h1>
+
+              <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                  <div class="card stat-card">
+                    <div class="small text-muted mb-1">Total Juegos</div>
+                    <div id="countGames" class="stat-value">0</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="card stat-card">
+                    <div class="small text-muted mb-1">Usuarios</div>
+                    <div id="countUsers" class="stat-value">0</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="card stat-card">
+                    <div class="small text-muted mb-1">Modo Online</div>
+                    <div id="countOnline" class="stat-value">0</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="card stat-card">
+                    <div class="small text-muted mb-1">Latencia</div>
+                    <div id="avgLatency" class="stat-value">0ms</div>
+                  </div>
+                </div>
+              </div>
+
+              <h2 class="h6 mb-3">Actividad Reciente</h2>
+              <div id="dashboardLogs" class="console-box"></div>
+            </section>
+
+            <section id="viewGames" class="view-section">
+              <div
+                class="d-flex justify-content-between align-items-center mb-3"
+              >
+                <h1 class="h4 m-0">Catálogo de Juegos</h1>
+                <button
+                  class="btn btn-sm btn-primary"
+                  id="btnShowAddGame"
+                  style="display: none"
+                  onclick="openGameModal()"
+                >
+                  Añadir Juego
+                </button>
+              </div>
+
+              <div class="card">
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Desarrollador</th>
+                        <th>Modo</th>
+                        <th
+                          id="thActions"
+                          style="display: none"
+                          class="text-end"
+                        >
+                          Acciones
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody id="gamesBody"></tbody>
+                  </table>
+                </div>
+                <div
+                  class="card-footer d-flex justify-content-between align-items-center bg-white"
+                >
+                  <span id="pageLabel" class="small text-muted">Página 1</span>
+                  <nav>
+                    <ul class="pagination pagination-sm m-0">
+                      <li class="page-item">
+                        <button
+                          class="page-link"
+                          id="prevPage"
+                          onclick="changePage(-1)"
+                        >
+                          Ant.
+                        </button>
+                      </li>
+                      <li class="page-item">
+                        <button
+                          class="page-link"
+                          id="nextPage"
+                          onclick="changePage(1)"
+                        >
+                          Sig.
+                        </button>
+                      </li>
+                    </ul>
+                  </nav>
+                </div>
+              </div>
+            </section>
+
+            <section id="viewUsers" class="view-section">
+              <h1 class="h4 mb-4">Lista de Usuarios</h1>
+              <div class="card">
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Roles</th>
+                      </tr>
+                    </thead>
+                    <tbody id="usersBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+
+            <section id="viewLogs" class="view-section">
+              <div
+                class="d-flex justify-content-between align-items-center mb-3"
+              >
+                <h1 class="h4 m-0">Registro de Red</h1>
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  onclick="document.getElementById('fullLogs').innerHTML = ''"
+                >
+                  Limpiar
+                </button>
+              </div>
+              <div class="card">
+                <div
+                  id="fullLogs"
+                  class="console-box"
+                  style="height: 400px"
+                ></div>
+              </div>
+            </section>
+          </main>
         </div>
+      </div>
+    </div>
 
-        <div class="form-group">
-          <label class="form-label">Password</label>
-          <input id="password" class="form-control" type="password" autocomplete="current-password">
-          <span class="form-text">
-            (Demo) Alice: <span style="font-family:var(--mono)">password123</span> · Bob: <span style="font-family:var(--mono)">password456</span>
-          </span>
-        </div>
-
-        <button id="btnLogin" class="btn-primary" onclick="doLogin()">Entrar</button>
-
-        <div id="loginAlert" class="alert"></div>
-
-        <div>
-          <button class="jwt-toggle" onclick="toggleJwt()">Ver token / claims</button>
-          <div id="jwtBox" class="jwt-box">
-            <div id="jwtRaw" class="jwt-raw"></div>
-            <pre id="jwtClaims"></pre>
+    <div class="modal fade" id="gameModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalTitle">Juego</h5>
+            <button
+              type="button"
+              class="btn-close"
+              onclick="closeGameModal()"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="gameId" />
+            <div class="mb-3">
+              <label class="form-label small">Nombre</label>
+              <input
+                type="text"
+                id="gameName"
+                class="form-control form-control-sm"
+              />
+            </div>
+            <div class="mb-3">
+              <label class="form-label small">Desarrollador</label>
+              <input
+                type="text"
+                id="gameDev"
+                class="form-control form-control-sm"
+              />
+            </div>
+            <div class="form-check mt-3">
+              <input class="form-check-input" type="checkbox" id="gameOnline" />
+              <label class="form-check-label small" for="gameOnline"
+                >Contenido Online</label
+              >
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-sm btn-secondary"
+              onclick="closeGameModal()"
+            >
+              Cerrar
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-primary"
+              onclick="saveGame()"
+            >
+              Guardar
+            </button>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- CONTENT -->
-  <div id="viewContent">
-
-    <!-- ADMIN DASHBOARD -->
-    <section id="secAdminDashboard" style="display:none" class="fade-in">
-      <div class="content-header">
-        <h1>Dashboard Admin</h1>
-        <span class="endpoint-tag">Resumen (GET /libros · GET /users)</span>
-        <div class="spacer"></div>
-        <button class="btn-secondary btn-sm" onclick="loadDashboard()">↺ Recargar</button>
-      </div>
-
-      <div class="dash-grid">
-        <div class="kpi">
-          <div class="kpi-title">Libros</div>
-          <div id="kpiLibros" class="kpi-value">—</div>
-          <div class="kpi-sub">totalElements de /api/v1/libros</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-title">Usuarios</div>
-          <div id="kpiUsers" class="kpi-value">—</div>
-          <div class="kpi-sub">longitud de /api/v1/users</div>
-        </div>
-      </div>
-
-      <div class="console-panel">
-        <div class="console-toolbar">
-          <span class="console-title">Response</span>
-          <span id="statusPillDash" class="status-pill" style="display:none"></span>
-          <div class="spacer"></div>
-          <button class="btn-copy-console" onclick="copyConsole('consoleDash')">Copiar</button>
-        </div>
-        <pre id="consoleDash" class="console-out">// Resumen de llamadas aparecerá aquí</pre>
-      </div>
-    </section>
-
-    <!-- LIST LIBROS (USER y ADMIN) -->
-    <section id="secListLibros" style="display:none" class="fade-in">
-      <div class="content-header">
-        <h1>Libros</h1>
-        <span class="endpoint-tag">GET /api/v1/libros</span>
-        <div class="spacer"></div>
-        <button class="btn-secondary btn-sm" onclick="loadLibros(page)">↺ Recargar</button>
-      </div>
-
-      <div class="table-wrap">
-        <div class="table-toolbar">
-          <span class="toolbar-title">Resultados</span>
-          <span id="librosMeta" class="toolbar-meta"></span>
-          <div class="spacer"></div>
-        </div>
-        <div id="librosBody"></div>
-        <div class="pagination">
-          <button id="btnPrev" class="btn-page" onclick="goPage(-1)" disabled>← Anterior</button>
-          <span id="pageInfo" class="page-info">—</span>
-          <button id="btnNext" class="btn-page" onclick="goPage(1)" disabled>Siguiente →</button>
-        </div>
-      </div>
-
-      <div class="console-panel">
-        <div class="console-toolbar">
-          <span class="console-title">Response</span>
-          <span id="statusPillLibros" class="status-pill" style="display:none"></span>
-          <div class="spacer"></div>
-          <button class="btn-copy-console" onclick="copyConsole('consoleLibros')">Copiar</button>
-        </div>
-        <pre id="consoleLibros" class="console-out">// La respuesta del servidor aparecerá aquí</pre>
-      </div>
-    </section>
-
-    <!-- CREATE LIBRO (ADMIN) -->
-    <section id="secCreateLibro" style="display:none" class="fade-in">
-      <div class="content-header">
-        <h1>Crear libro</h1>
-        <span class="endpoint-tag">POST /api/v1/libros</span>
-      </div>
-
-      <div class="form-panel">
-        <div class="form-panel-header">
-          <span class="panel-title">Request Body</span>
-          <span class="method-badge method-POST">POST</span>
-        </div>
-        <div class="form-panel-body">
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Título *</label>
-              <input id="newTitulo" class="form-control" placeholder="Clean Code">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Autor *</label>
-              <input id="newAutor" class="form-control" placeholder="Robert C. Martin">
-            </div>
-            <div class="form-group">
-              <label class="form-label">ISBN *</label>
-              <input id="newIsbn" class="form-control" placeholder="9780132350884">
-            </div>
-          </div>
-          <div id="createAlert" class="alert"></div>
-          <button id="btnCreate" class="btn-primary" style="max-width:180px" onclick="doCreate()">Crear libro</button>
-        </div>
-      </div>
-
-      <div class="console-panel">
-        <div class="console-toolbar">
-          <span class="console-title">Response</span>
-          <span id="statusPillCreate" class="status-pill" style="display:none"></span>
-          <div class="spacer"></div>
-          <button class="btn-copy-console" onclick="copyConsole('consoleCreate')">Copiar</button>
-        </div>
-        <pre id="consoleCreate" class="console-out">// La respuesta del servidor aparecerá aquí</pre>
-      </div>
-    </section>
-
-    <!-- LIST USERS (ADMIN) -->
-    <section id="secListUsers" style="display:none" class="fade-in">
-      <div class="content-header">
-        <h1>Usuarios</h1>
-        <span class="endpoint-tag">GET /api/v1/users</span>
-        <div class="spacer"></div>
-        <button class="btn-secondary btn-sm" onclick="loadUsers()">↺ Recargar</button>
-      </div>
-
-      <div class="table-wrap">
-        <div class="table-toolbar">
-          <span class="toolbar-title">Usuarios del sistema</span>
-          <div class="spacer"></div>
-        </div>
-        <div id="usersBody"></div>
-      </div>
-
-      <div class="console-panel">
-        <div class="console-toolbar">
-          <span class="console-title">Response</span>
-          <span id="statusPillUsers" class="status-pill" style="display:none"></span>
-          <div class="spacer"></div>
-          <button class="btn-copy-console" onclick="copyConsole('consoleUsers')">Copiar</button>
-        </div>
-        <pre id="consoleUsers" class="console-out">// La respuesta del servidor aparecerá aquí</pre>
-      </div>
-    </section>
-
-    <!-- RESOURCE -->
-    <section id="secResource" style="display:none" class="fade-in">
-      <div class="content-header">
-        <h1>Recurso protegido</h1>
-        <span class="endpoint-tag">GET /api/v1/resources</span>
-        <div class="spacer"></div>
-        <button class="btn-secondary btn-sm" onclick="loadResource()">↺ Recargar</button>
-      </div>
-
-      <div class="form-panel">
-        <div class="form-panel-body">
-          <div id="resourceBox" style="font-family:var(--mono);font-size:.9rem;color:var(--muted);padding:.5rem 0">
-            — Pulsa recargar para obtener el recurso —
-          </div>
-        </div>
-      </div>
-
-      <div class="console-panel">
-        <div class="console-toolbar">
-          <span class="console-title">Response</span>
-          <span id="statusPillResource" class="status-pill" style="display:none"></span>
-          <div class="spacer"></div>
-          <button class="btn-copy-console" onclick="copyConsole('consoleResource')">Copiar</button>
-        </div>
-        <pre id="consoleResource" class="console-out">// La respuesta del servidor aparecerá aquí</pre>
-      </div>
-    </section>
-
-    <div id="contentAlert" class="alert"></div>
-  </div>
-
-</main>
-
-<!-- MODAL EDITAR -->
-<div id="modalEdit" class="modal-backdrop">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>Editar libro</h3>
-      <button class="btn-modal-close" onclick="closeModal('modalEdit')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input id="editId" type="hidden">
-      <div class="form-group">
-        <label class="form-label">Título *</label>
-        <input id="editTitulo" class="form-control">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Autor *</label>
-        <input id="editAutor" class="form-control">
-      </div>
-      <div class="form-group">
-        <label class="form-label">ISBN *</label>
-        <input id="editIsbn" class="form-control">
-      </div>
-      <div id="editAlert" class="alert"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" onclick="closeModal('modalEdit')">Cancelar</button>
-      <button class="btn-confirm" onclick="doUpdate()">Guardar cambios</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL CONFIRMAR BORRADO -->
-<div id="modalDelete" class="modal-backdrop">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>Eliminar libro</h3>
-      <button class="btn-modal-close" onclick="closeModal('modalDelete')">✕</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:.9rem">¿Seguro que quieres eliminar el libro <strong id="deleteTitle"></strong>?</p>
-      <p style="font-size:.8rem;color:var(--muted);margin-top:.5rem">Esta acción no se puede deshacer.</p>
-      <div id="deleteAlert" class="alert"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" onclick="closeModal('modalDelete')">Cancelar</button>
-      <button class="btn-confirm danger" onclick="doDelete()">Eliminar</button>
-    </div>
-  </div>
-</div>
-
-<script>
-(() => {
-  // ── STATE ────────────────────────────────────────────────────
-  let token = null;
-  let isAdmin = false;
-
-  // libros paging
-  window.page = 0;          // expuesto para botones
-  let totalPages = 0;
-  const pageSize = 10;
-
-  // delete modal
-  let deleteId = null;
-
-  // ── DOM HELPERS ──────────────────────────────────────────────
-  const $ = id => document.getElementById(id);
-  const api = () => ($('apiBase').value || '').replace(/\/+$/, '');
-
-  function setActiveNav(view) {
-    document.querySelectorAll('.nav-btn').forEach(b => {
-      const v = b.getAttribute('data-view');
-      b.classList.toggle('active', v === view);
-    });
-  }
-
-  function showAlert(id, type, msg) {
-    const el = $(id);
-    el.className = `alert alert-${type} show`;
-    el.textContent = msg;
-  }
-  function hideAlert(id) {
-    const el = $(id);
-    el.className = 'alert';
-    el.textContent = '';
-  }
-
-  function setConsole(preId, pillId, status, data) {
-    const pre = $(preId);
-    const pill = $(pillId);
-    const txt = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    pre.textContent = txt;
-
-    if (pill) {
-      pill.style.display = 'inline-block';
-      const cls = status >= 500 ? 'status-5xx' : status >= 400 ? 'status-4xx' : 'status-2xx';
-      pill.className = `status-pill ${cls}`;
-      pill.textContent = status;
-    }
-  }
-
-  window.copyConsole = async (preId) => {
-    try { await navigator.clipboard.writeText($(preId).textContent); } catch {}
-  };
-
-  // ── JWT ──────────────────────────────────────────────────────
-  function decodeJwt(t) {
-    try {
-      const b64 = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-      return JSON.parse(decodeURIComponent(
-        atob(b64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
-      ));
-    } catch { return null; }
-  }
-
-  function updateJwtUI() {
-    $('jwtRaw').textContent = token || '';
-    const claims = token ? decodeJwt(token) : null;
-    $('jwtClaims').textContent = claims ? JSON.stringify(claims, null, 2) : '';
-  }
-
-  window.toggleJwt = () => $('jwtBox').classList.toggle('show');
-
-  function getUserLabelFromJwt() {
-    const claims = token ? decodeJwt(token) : null;
-    return claims?.sub || claims?.email || '—';
-  }
-
-  // ── HTTP ─────────────────────────────────────────────────────
-  async function request(path, { method = 'GET', body = null, auth = true } = {}) {
-    const url = api() + path;
-    const headers = {};
-    if (body != null) headers['Content-Type'] = 'application/json';
-    if (auth && token) headers['Authorization'] = `Bearer ${token}`;
-
-    const res = await fetch(url, {
-      method,
-      headers,
-      body: body != null ? JSON.stringify(body) : null
-    });
-
-    const ct = res.headers.get('content-type') || '';
-    let data;
-    if (ct.includes('application/json')) data = await res.json().catch(() => null);
-    else data = await res.text().catch(() => '');
-
-    // Si token expiró: logout automático
-    if (res.status === 401 && auth) {
-      doLogout();
-      return { status: 401, ok: false, data };
-    }
-
-    return { status: res.status, ok: res.ok, data };
-  }
-
-  // ── ADMIN DETECTION (backend is source of truth) ─────────────
-  async function detectAdminByUsersEndpoint() {
-    const { status } = await request('/api/v1/users', { method: 'GET' });
-    if (status === 200) return true;
-    if (status === 403) return false;
-    if (status === 401) throw new Error('Sesión expirada. Vuelve a hacer login.');
-    return false;
-  }
-
-  // ── PRESET ───────────────────────────────────────────────────
-  window.fillPreset = () => {
-    const p = $('preset').value;
-    if (p === 'user') {
-      $('email').value = 'alice.johnson@example.com';
-      $('password').value = 'password123';
-    } else if (p === 'admin') {
-      $('email').value = 'bob.smith@example.com';
-      $('password').value = 'password456';
-    }
-  };
-
-  // ── LOGIN ────────────────────────────────────────────────────
-  window.doLogin = async () => {
-    hideAlert('loginAlert');
-
-    const email = $('email').value.trim();
-    const pass  = $('password').value;
-
-    if (!email || !pass) {
-      return showAlert('loginAlert', 'warning', 'Introduce email y password.');
-    }
-
-    const btn = $('btnLogin');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span>Entrando…';
-
-    try {
-      const { status, ok, data } = await request('/api/v1/auth/signin', {
-        method: 'POST', auth: false, body: { email, password: pass }
-      });
-
-      if (!ok) {
-        const msg = data?.message || data?.error || (typeof data === 'string' ? data : JSON.stringify(data));
-        throw new Error(`${status} — ${msg}`);
-      }
-
-      const t = data?.token || data?.jwt || data?.accessToken || data?.access_token;
-      if (!t) throw new Error('Respuesta sin campo token.');
-
-      token = t;
-      updateJwtUI();
-
-      // ✅ Rol real (no dependemos del JWT)
-      isAdmin = await detectAdminByUsersEndpoint();
-
-      afterLogin();
-    } catch (e) {
-      token = null;
-      isAdmin = false;
-      updateJwtUI();
-      showAlert('loginAlert', 'danger', `Login fallido: ${e.message}`);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Entrar';
-    }
-  };
-
-  function afterLogin() {
-    $('viewLogin').style.display = 'none';
-    $('viewContent').classList.add('show');
-
-    $('btnLogout').disabled = false;
-    $('navUser').style.display = isAdmin ? 'none' : 'block';
-    $('navAdmin').style.display = isAdmin ? 'block' : 'none';
-
-    const who = getUserLabelFromJwt();
-    const badge = $('badgeRole');
-    badge.textContent = `${who} · ${isAdmin ? 'ROLE_ADMIN' : 'ROLE_USER'}`;
-    badge.title = badge.textContent;
-    badge.classList.add('active');
-
-    // Vista inicial
-    if (isAdmin) {
-      switchView('adminDashboard');
-      loadDashboard();
-    } else {
-      switchView('listLibros');
-      loadLibros(0);
-    }
-  }
-
-  // ── LOGOUT ───────────────────────────────────────────────────
-  window.doLogout = () => {
-    token = null;
-    isAdmin = false;
-    window.page = 0;
-    totalPages = 0;
-    deleteId = null;
-
-    updateJwtUI();
-
-    $('viewContent').classList.remove('show');
-    $('viewLogin').style.display = 'flex';
-
-    $('btnLogout').disabled = true;
-    $('navUser').style.display = 'none';
-    $('navAdmin').style.display = 'none';
-
-    const badge = $('badgeRole');
-    badge.textContent = '—';
-    badge.title = 'Usuario · rol';
-    badge.classList.remove('active');
-
-    // limpia UI mínima
-    $('librosBody').innerHTML = '';
-    $('usersBody').innerHTML = '';
-    $('resourceBox').textContent = '— Pulsa recargar para obtener el recurso —';
-
-    showLogin();
-  };
-  $('btnLogout').addEventListener('click', () => window.doLogout());
-
-  window.showLogin = () => {
-    setActiveNav('login');
-  };
-
-  // ── VIEWS ─────────────────────────────────────────────────────
-  const SECTIONS = [
-    'secAdminDashboard',
-    'secListLibros',
-    'secCreateLibro',
-    'secListUsers',
-    'secResource'
-  ];
-
-  window.switchView = (view) => {
-    SECTIONS.forEach(s => { $(s).style.display = 'none'; });
-
-    const map = {
-      adminDashboard: 'secAdminDashboard',
-      listLibros:     'secListLibros',
-      createLibro:    'secCreateLibro',
-      listUsers:      'secListUsers',
-      resource:       'secResource',
-    };
-
-    const secId = map[view];
-    const sec = $(secId);
-    if (sec) {
-      sec.style.display = 'flex';
-      sec.style.flexDirection = 'column';
-      sec.style.gap = '1rem';
-    }
-
-    setActiveNav(view);
-
-    // auto-load
-    if (view === 'adminDashboard') loadDashboard();
-    if (view === 'listLibros')     loadLibros(window.page || 0);
-    if (view === 'listUsers')      loadUsers();
-    if (view === 'resource')       loadResource();
-  };
-
-  // ── DASHBOARD (ADMIN) ─────────────────────────────────────────
-  window.loadDashboard = async () => {
-    if (!token || !isAdmin) return;
-
-    hideAlert('contentAlert');
-
-    try {
-      const [librosRes, usersRes] = await Promise.all([
-        request(`/api/v1/libros?page=0&size=1`),
-        request(`/api/v1/users`)
-      ]);
-
-      const summary = {
-        libros: { status: librosRes.status, sample: librosRes.data },
-        users:  { status: usersRes.status,  sample: usersRes.data }
-      };
-
-      const librosTotal = librosRes.data?.totalElements ?? '—';
-      const usersCount  = Array.isArray(usersRes.data) ? usersRes.data.length : '—';
-
-      $('kpiLibros').textContent = String(librosTotal);
-      $('kpiUsers').textContent  = String(usersCount);
-
-      // status "principal" (si alguno falla, marca 4xx/5xx)
-      const worst = Math.max(librosRes.status, usersRes.status);
-      setConsole('consoleDash', 'statusPillDash', worst, summary);
-    } catch (e) {
-      showAlert('contentAlert', 'danger', `Error dashboard: ${e.message}`);
-      setTimeout(() => hideAlert('contentAlert'), 4000);
-    }
-  };
-
-  // ── LIBROS ────────────────────────────────────────────────────
-  window.loadLibros = async (p = 0) => {
-    if (!token) return;
-
-    hideAlert('contentAlert');
-
-    try {
-      const { status, ok, data } = await request(`/api/v1/libros?page=${p}&size=${pageSize}`);
-      setConsole('consoleLibros', 'statusPillLibros', status, data);
-
-      if (!ok) {
-        const msg = data?.message || data?.error || (typeof data === 'string' ? data : JSON.stringify(data));
-        throw new Error(msg);
-      }
-
-      const content = Array.isArray(data?.content) ? data.content : [];
-      window.page = Number.isFinite(data?.number) ? data.number : p;
-      totalPages  = Number.isFinite(data?.totalPages) ? data.totalPages : 0;
-
-      // paginación robusta: si totalPages viene 0/null, usa content length
-      const maybeLast = content.length < pageSize;
-      const computedTotalPages = totalPages > 0 ? totalPages : (maybeLast ? (window.page + 1) : (window.page + 2));
-
-      $('librosMeta').textContent = `${data?.totalElements ?? '?'} elementos · página ${window.page + 1}/${Math.max(computedTotalPages, 1)}`;
-      $('pageInfo').textContent   = `${window.page + 1} / ${Math.max(computedTotalPages, 1)}`;
-
-      $('btnPrev').disabled = window.page <= 0;
-      $('btnNext').disabled = (totalPages > 0)
-        ? (window.page >= totalPages - 1)
-        : maybeLast;
-
-      if (!content.length) {
-        $('librosBody').innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>Sin resultados</p></div>`;
-        return;
-      }
-
-      const adminCols = isAdmin ? '<th>Acciones</th>' : '';
-      const rows = content.map(l => {
-        const actions = isAdmin ? `
-          <td>
-            <div class="action-cell">
-              <button class="btn-edit" onclick='openEdit(${JSON.stringify(l)})'>Editar</button>
-              <button class="btn-del"  onclick='openDelete(${l.id}, ${JSON.stringify(l.titulo)})'>Borrar</button>
-            </div>
-          </td>` : '';
-        return `<tr>
-          <td class="mono-cell">${l.id ?? ''}</td>
-          <td>${esc(l.titulo ?? '')}</td>
-          <td>${esc(l.autor  ?? '')}</td>
-          <td class="mono-cell">${esc(l.isbn ?? '')}</td>
-          ${actions}
-        </tr>`;
-      }).join('');
-
-      $('librosBody').innerHTML = `
-        <table>
-          <thead><tr><th>ID</th><th>Título</th><th>Autor</th><th>ISBN</th>${adminCols}</tr></thead>
-          <tbody>${rows}</tbody>
-        </table>`;
-
-    } catch (e) {
-      showAlert('contentAlert', 'danger', `Error libros: ${e.message}`);
-      setTimeout(() => hideAlert('contentAlert'), 4000);
-    }
-  };
-
-  window.goPage = (dir) => {
-    const next = Math.max(0, (window.page || 0) + dir);
-    loadLibros(next);
-  };
-
-  // ── CREATE ────────────────────────────────────────────────────
-  window.doCreate = async () => {
-    if (!isAdmin) return showAlert('createAlert', 'danger', 'Necesitas ROLE_ADMIN.');
-
-    hideAlert('createAlert');
-
-    const titulo = $('newTitulo').value.trim();
-    const autor  = $('newAutor').value.trim();
-    const isbn   = $('newIsbn').value.trim();
-
-    if (!titulo || !autor || !isbn) {
-      return showAlert('createAlert', 'warning', 'Todos los campos son obligatorios.');
-    }
-
-    const btn = $('btnCreate');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span>Creando…';
-
-    try {
-      const { status, ok, data } = await request('/api/v1/libros', {
-        method: 'POST', body: { titulo, autor, isbn }
-      });
-      setConsole('consoleCreate', 'statusPillCreate', status, data);
-
-      if (!ok) {
-        const msg = data?.message || data?.error || (typeof data === 'string' ? data : JSON.stringify(data));
-        throw new Error(msg);
-      }
-
-      showAlert('createAlert', 'success', `Libro "${data?.titulo}" creado con ID ${data?.id}.`);
-
-      $('newTitulo').value = '';
-      $('newAutor').value = '';
-      $('newIsbn').value = '';
-
-      // refresca listado si estás en libros
-      if ($('secListLibros').style.display !== 'none') {
-        await loadLibros(window.page || 0);
-      }
-    } catch (e) {
-      showAlert('createAlert', 'danger', `Error: ${e.message}`);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Crear libro';
-    }
-  };
-
-  // ── EDIT ──────────────────────────────────────────────────────
-  window.openEdit = (libro) => {
-    if (!isAdmin) return;
-
-    $('editId').value     = libro.id;
-    $('editTitulo').value = libro.titulo ?? '';
-    $('editAutor').value  = libro.autor ?? '';
-    $('editIsbn').value   = libro.isbn ?? '';
-    hideAlert('editAlert');
-    $('modalEdit').classList.add('show');
-  };
-
-  window.doUpdate = async () => {
-    if (!isAdmin) return showAlert('editAlert', 'danger', 'Necesitas ROLE_ADMIN.');
-
-    hideAlert('editAlert');
-
-    const id     = $('editId').value;
-    const titulo = $('editTitulo').value.trim();
-    const autor  = $('editAutor').value.trim();
-    const isbn   = $('editIsbn').value.trim();
-
-    if (!titulo || !autor || !isbn) {
-      return showAlert('editAlert', 'warning', 'Todos los campos son obligatorios.');
-    }
-
-    try {
-      const { status, ok, data } = await request(`/api/v1/libros/${id}`, {
-        method: 'PUT', body: { titulo, autor, isbn }
-      });
-
-      // muestra la respuesta en la consola de libros para “pruebas”
-      setConsole('consoleLibros', 'statusPillLibros', status, data);
-
-      if (!ok) {
-        const msg = data?.message || data?.error || (typeof data === 'string' ? data : JSON.stringify(data));
-        throw new Error(msg);
-      }
-
-      closeModal('modalEdit');
-      showAlert('contentAlert', 'success', `Libro #${id} actualizado.`);
-      setTimeout(() => hideAlert('contentAlert'), 2500);
-      loadLibros(window.page || 0);
-    } catch (e) {
-      showAlert('editAlert', 'danger', `Error: ${e.message}`);
-    }
-  };
-
-  // ── DELETE ────────────────────────────────────────────────────
-  window.openDelete = (id, titulo) => {
-    if (!isAdmin) return;
-
-    deleteId = id;
-    $('deleteTitle').textContent = `"${titulo ?? ''}"`;
-    hideAlert('deleteAlert');
-    $('modalDelete').classList.add('show');
-  };
-
-  window.doDelete = async () => {
-    if (!isAdmin) return showAlert('deleteAlert', 'danger', 'Necesitas ROLE_ADMIN.');
-
-    try {
-      const { status, ok, data } = await request(`/api/v1/libros/${deleteId}`, { method: 'DELETE' });
-
-      // muestra la respuesta en la consola de libros para “pruebas”
-      setConsole('consoleLibros', 'statusPillLibros', status, data || `DELETE ${deleteId} → ${status}`);
-
-      if (!ok) {
-        const msg = data?.message || data?.error || (typeof data === 'string' ? data : JSON.stringify(data));
-        throw new Error(msg);
-      }
-
-      closeModal('modalDelete');
-      showAlert('contentAlert', 'success', `Libro #${deleteId} eliminado.`);
-      setTimeout(() => hideAlert('contentAlert'), 2500);
-
-      // si borras el último de la página, intenta retroceder
-      const current = window.page || 0;
-      await loadLibros(current);
-    } catch (e) {
-      showAlert('deleteAlert', 'danger', `Error: ${e.message}`);
-    }
-  };
-
-  // ── USERS ─────────────────────────────────────────────────────
-  window.loadUsers = async () => {
-    if (!isAdmin) return;
-
-    hideAlert('contentAlert');
-
-    try {
-      const { status, ok, data } = await request('/api/v1/users');
-      setConsole('consoleUsers', 'statusPillUsers', status, data);
-
-      if (!ok) {
-        const msg = data?.message || data?.error || (typeof data === 'string' ? data : JSON.stringify(data));
-        throw new Error(msg);
-      }
-
-      const list = Array.isArray(data) ? data : [];
-
-      if (!list.length) {
-        $('usersBody').innerHTML = `<div class="empty-state"><div class="icon">👤</div><p>Sin usuarios</p></div>`;
-        return;
-      }
-
-      const rows = list.map(u => {
-        const chips = (Array.isArray(u.roles) ? u.roles : [])
-          .map(r => `<span class="role-chip">${esc(r)}</span>`)
-          .join('');
-        return `<tr>
-          <td class="mono-cell">${u.id ?? ''}</td>
-          <td>${esc(u.email ?? '')}</td>
-          <td>${esc(u.nombre ?? '')}</td>
-          <td>${chips}</td>
-        </tr>`;
-      }).join('');
-
-      $('usersBody').innerHTML = `
-        <table>
-          <thead><tr><th>ID</th><th>Email</th><th>Nombre</th><th>Roles</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>`;
-    } catch (e) {
-      showAlert('contentAlert', 'danger', `Error /users: ${e.message}`);
-      setTimeout(() => hideAlert('contentAlert'), 4000);
-    }
-  };
-
-  // ── RESOURCE ──────────────────────────────────────────────────
-  window.loadResource = async () => {
-    hideAlert('contentAlert');
-
-    try {
-      const { status, ok, data } = await request('/api/v1/resources');
-      setConsole('consoleResource', 'statusPillResource', status, data);
-
-      $('resourceBox').textContent = ok
-        ? (typeof data === 'string' ? data : JSON.stringify(data, null, 2))
-        : `Error ${status}: ${data?.message || data?.error || (typeof data === 'string' ? data : JSON.stringify(data))}`;
-    } catch (e) {
-      $('resourceBox').textContent = `Error: ${e.message}`;
-    }
-  };
-
-  // ── MODAL ─────────────────────────────────────────────────────
-  window.closeModal = (id) => $(id).classList.remove('show');
-  window.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeModal('modalEdit'); closeModal('modalDelete'); }
-  });
-
-  // ── UTILS ─────────────────────────────────────────────────────
-  function esc(s) {
-    return String(s)
-      .replace(/&/g,'&amp;')
-      .replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;');
-  }
-
-  // ── INIT ──────────────────────────────────────────────────────
-  $('password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-  $('email').addEventListener('keydown',    e => { if (e.key === 'Enter') doLogin(); });
-
-  fillPreset();
-  showLogin();
-})();
-</script>
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+  </body>
 </html>

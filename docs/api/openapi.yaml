@@ -10,8 +10,8 @@ info:
     - UsuarioResponse    : firstName, lastName, email, rol (string singular)
     - ErrorDetailsResponse: timestamp, message, details
     - POST /auth/signup  -> 200 + JWT
-    - POST /libros       -> 200 + Libro
-    - DELETE /libros/{id}-> 200 sin body
+    - POST /videojuegos  -> 200 + Videojuego
+    - DELETE /videojuegos/{id}-> 200 sin body
 
 servers:
   - url: http://localhost:9091
@@ -20,8 +20,8 @@ servers:
 tags:
   - name: Auth
     description: Autenticación y registro de usuarios
-  - name: Libros
-    description: CRUD de libros — lectura requiere USER/ADMIN, escritura requiere ADMIN
+  - name: Videojuegos
+    description: CRUD de videojuegos — lectura requiere USER/ADMIN, escritura requiere ADMIN
   - name: Users
     description: Gestión/listado de usuarios (solo ADMIN)
   - name: Resources
@@ -38,7 +38,6 @@ components:
       bearerFormat: JWT
 
   schemas:
-
     # ── Error ──────────────────────────────────────────────────────────────────
     # Refleja exactamente: ErrorDetailsResponse(Date timestamp, String message, String details)
     ErrorDetailsResponse:
@@ -57,7 +56,7 @@ components:
         details:
           type: string
           description: Información adicional, normalmente la URI de la petición
-          example: "uri=/api/v1/libros"
+          example: "uri=/api/v1/videojuegos"
 
     # ── Auth ───────────────────────────────────────────────────────────────────
     SigninRequest:
@@ -102,44 +101,44 @@ components:
           description: JWT Bearer token
           example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhbGljZS5qb2huc29uQGV4YW1wbGUuY29tIiwicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTcwODM2OTQwMCwiZXhwIjoxNzA4MzczMDAwfQ.signature"
 
-    # ── Libros ─────────────────────────────────────────────────────────────────
-    Libro:
+    # ── Videojuegos ───────────────────────────────────────────────────────────
+    Videojuego:
       type: object
-      description: Libro persistido devuelto por el servidor. El id lo asigna el servidor.
-      required: [id, titulo, autor, isbn]
+      description: Videojuego persistido devuelto por el servidor. El id lo asigna el servidor.
+      required: [id, nombre, desarrollador, esOnline]
       properties:
         id:
           type: integer
           format: int64
           readOnly: true
           example: 1
-        titulo:
+        nombre:
           type: string
-          example: Clean Code
-        autor:
+          example: Elden Ring
+        desarrollador:
           type: string
-          example: Robert C. Martin
-        isbn:
-          type: string
-          description: ISBN-10 (puede terminar en X) o ISBN-13
-          example: "9780132350884"
+          example: FromSoftware
+        esOnline:
+          type: boolean
+          description: Indica si el juego tiene componentes online
+          example: true
 
-    LibroWriteRequest:
+    VideojuegoWriteRequest:
       type: object
       description: >
-        Cuerpo para crear (POST) o actualizar (PUT) un libro.
+        Cuerpo para crear (POST) o actualizar (PUT) un videojuego.
         El id no se incluye; en PUT se obtiene del path.
-      required: [titulo, autor, isbn]
+      required: [nombre, desarrollador, esOnline]
       properties:
-        titulo:
+        nombre:
           type: string
-          example: Clean Code
-        autor:
+          example: Elden Ring
+        desarrollador:
           type: string
-          example: Robert C. Martin
-        isbn:
-          type: string
-          example: "9780132350884"
+          example: FromSoftware
+        esOnline:
+          type: boolean
+          example: true
 
     # ── Spring Data Page ───────────────────────────────────────────────────────
     SortObject:
@@ -169,15 +168,16 @@ components:
         sort:
           $ref: "#/components/schemas/SortObject"
 
-    PageLibro:
+    PageVideojuego:
       type: object
-      description: Respuesta paginada de Spring Data (Page<Libro>).
-      required: [content, number, size, totalElements, totalPages, first, last, empty]
+      description: Respuesta paginada de Spring Data (Page<Videojuego>).
+      required:
+        [content, number, size, totalElements, totalPages, first, last, empty]
       properties:
         content:
           type: array
           items:
-            $ref: "#/components/schemas/Libro"
+            $ref: "#/components/schemas/Videojuego"
         pageable:
           $ref: "#/components/schemas/PageableObject"
         sort:
@@ -234,7 +234,6 @@ components:
 # PATHS
 # ──────────────────────────────────────────────────────────────────────────────
 paths:
-
   # ── AUTH ───────────────────────────────────────────────────────────────────
   /api/v1/auth/signin:
     post:
@@ -298,12 +297,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorDetailsResponse"
 
-  # ── LIBROS (colección) ─────────────────────────────────────────────────────
-  /api/v1/libros:
+  # ── VIDEOJUEGOS (colección) ────────────────────────────────────────────────
+  /api/v1/videojuegos:
     get:
-      tags: [Libros]
-      summary: Listado paginado de libros
-      operationId: listLibros
+      tags: [Videojuegos]
+      summary: Listado paginado de videojuegos
+      operationId: listVideojuegos
       description: Requiere ROLE_USER o ROLE_ADMIN.
       security:
         - bearerAuth: []
@@ -324,11 +323,11 @@ paths:
             minimum: 1
       responses:
         "200":
-          description: Página de libros
+          description: Página de videojuegos
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PageLibro"
+                $ref: "#/components/schemas/PageVideojuego"
         "401":
           description: Token ausente o expirado
           content:
@@ -343,9 +342,9 @@ paths:
                 $ref: "#/components/schemas/ErrorDetailsResponse"
 
     post:
-      tags: [Libros]
-      summary: Crear libro
-      operationId: createLibro
+      tags: [Videojuegos]
+      summary: Crear videojuego
+      operationId: createVideojuego
       description: Requiere ROLE_ADMIN.
       security:
         - bearerAuth: []
@@ -354,14 +353,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LibroWriteRequest"
+              $ref: "#/components/schemas/VideojuegoWriteRequest"
       responses:
         "200":
-          description: Libro creado (comportamiento actual del backend)
+          description: Videojuego creado (comportamiento actual del backend)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Libro"
+                $ref: "#/components/schemas/Videojuego"
         "400":
           description: Validación fallida
           content:
@@ -381,13 +380,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorDetailsResponse"
 
-  # ── LIBROS (recurso individual) ────────────────────────────────────────────
-  /api/v1/libros/{id}:
+  # ── VIDEOJUEGOS (recurso individual) ───────────────────────────────────────
+  /api/v1/videojuegos/{id}:
     parameters:
       - in: path
         name: id
         required: true
-        description: ID del libro
+        description: ID del videojuego
         schema:
           type: integer
           format: int64
@@ -395,19 +394,19 @@ paths:
           example: 1
 
     get:
-      tags: [Libros]
-      summary: Obtener libro por ID
-      operationId: getLibroById
+      tags: [Videojuegos]
+      summary: Obtener videojuego por ID
+      operationId: getVideojuegoById
       description: Requiere ROLE_USER o ROLE_ADMIN.
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: Libro encontrado
+          description: Videojuego encontrado
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Libro"
+                $ref: "#/components/schemas/Videojuego"
         "401":
           description: Token ausente o expirado
           content:
@@ -421,17 +420,17 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorDetailsResponse"
         "404":
-          description: Libro no encontrado
+          description: Videojuego no encontrado
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorDetailsResponse"
 
     put:
-      tags: [Libros]
-      summary: Actualizar libro
-      operationId: updateLibro
-      description: Requiere ROLE_ADMIN. Reemplaza todos los campos del libro.
+      tags: [Videojuegos]
+      summary: Actualizar videojuego
+      operationId: updateVideojuego
+      description: Requiere ROLE_ADMIN. Reemplaza todos los campos del videojuego.
       security:
         - bearerAuth: []
       requestBody:
@@ -439,14 +438,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LibroWriteRequest"
+              $ref: "#/components/schemas/VideojuegoWriteRequest"
       responses:
         "200":
-          description: Libro actualizado
+          description: Videojuego actualizado
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Libro"
+                $ref: "#/components/schemas/Videojuego"
         "400":
           description: Validación fallida
           content:
@@ -466,22 +465,22 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorDetailsResponse"
         "404":
-          description: Libro no encontrado
+          description: Videojuego no encontrado
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorDetailsResponse"
 
     delete:
-      tags: [Libros]
-      summary: Eliminar libro
-      operationId: deleteLibro
+      tags: [Videojuegos]
+      summary: Eliminar videojuego
+      operationId: deleteVideojuego
       description: Requiere ROLE_ADMIN.
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: Libro eliminado (comportamiento actual del backend — sin body)
+          description: Videojuego eliminado (comportamiento actual del backend — sin body)
         "401":
           description: Token ausente o expirado
           content:
@@ -495,7 +494,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorDetailsResponse"
         "404":
-          description: Libro no encontrado
+          description: Videojuego no encontrado
           content:
             application/json:
               schema:
